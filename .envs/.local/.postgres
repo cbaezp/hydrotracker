@@ -1,0 +1,7 @@
+# PostgreSQL
+# ------------------------------------------------------------------------------
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DB=hydrotracker
+POSTGRES_USER=EanNujKPMAOMOXGcVYjXXLgIWKIeFZQr
+POSTGRES_PASSWORD=wwBxHadJYXq5aZpjOiAvtmnmbK0GdVTLLLE2oQnmIC3T9iPwBrvxwEE8lop04wJ5
