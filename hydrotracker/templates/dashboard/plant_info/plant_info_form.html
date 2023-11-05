@@ -1,0 +1,13 @@
+{% extends "dashboard/base.html" %}
+
+{% block inner %}
+<div class="container mt-3">
+    <h2>{{ form.instance.pk|yesno:'Edit Plant Info,Add Plant Info' }}</h2>
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">{{ form.instance.pk|yesno:'Update,Create' }}</button>
+        <a href="{% url 'tracker:plant_info_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock inner %}

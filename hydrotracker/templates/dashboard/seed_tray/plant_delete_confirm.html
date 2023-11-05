@@ -1,0 +1,11 @@
+{% extends 'dashboard/base.html' %}
+
+{% block inner %}
+<form method="post" action="{% url 'tracker:plant_delete_confirm' plant.pk %}">
+    {% csrf_token %}
+    <p>Are you sure you want to delete the plant "{{ plant.plant_info.name }}"?</p>
+    <input type="hidden" name="next" value="{% url 'tracker:seed_tray_detail' plant.seed_tray.pk %}">
+    <button type="submit" class="btn btn-danger">Yes, delete it</button>
+    <a href="{% url 'tracker:seed_tray_detail' plant.seed_tray.pk %}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock inner %}

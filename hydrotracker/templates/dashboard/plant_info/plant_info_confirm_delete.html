@@ -1,0 +1,13 @@
+{% extends "dashboard/base.html" %}
+
+{% block inner %}
+<div class="container mt-3">
+    <h2>Confirm Delete</h2>
+    <p>Are you sure you want to delete the plant information "{{ plant_info.name }}"?</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Yes, delete it</button>
+        <a href="{% url 'tracker:plant_info_list' %}" class="btn btn-secondary">No, take me back</a>
+    </form>
+</div>
+{% endblock inner %}

@@ -1,0 +1,30 @@
+{% extends "dashboard/base.html" %}
+
+{% block inner %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center">
+        <h2>Hydroponic Systems</h2>
+        <a href="{% url 'tracker:hydroponic_grower_create' %}" class="btn btn-primary">Add Hydroponic System</a>
+    </div>
+    <hr>
+    <div class="row">
+        {% for hydroponic_grower in hydroponic_growers %}
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ hydroponic_grower.name }}</h5>
+                    <p class="card-text">
+                        Size: {{ hydroponic_grower.x_size }} x {{ hydroponic_grower.y_size }}<br>
+                        Orientation: {{ hydroponic_grower.get_orientation_display }}
+                    </p>
+                    <a href="{% url 'tracker:hydroponic_grower_edit' hydroponic_grower.pk %}" class="btn btn-secondary">Edit</a>
+                    <a href="{% url 'tracker:hydroponic_grower_confirm_delete' hydroponic_grower.pk %}" class="btn btn-danger">Delete</a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <p>No hydroponic growers found.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock inner %}

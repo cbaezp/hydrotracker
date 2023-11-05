@@ -1,0 +1,33 @@
+{% extends "dashboard/base.html" %}
+
+
+{% block inner %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center">
+        <h2>Germination Trays
+        </h2>
+        <a href="{% url 'tracker:seed_tray_create' %}" class="btn btn-primary">Add Seed Tray</a>
+    </div>
+    <hr>
+    <div class="row">
+        {% for seed_tray in seed_trays %}
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ seed_tray.name }}</h5>
+                    <p class="card-text">
+                        Size: {{ seed_tray.x_size }} x {{ seed_tray.y_size }}
+                    </p>
+                    <a href="{% url 'tracker:seed_tray_edit' seed_tray.pk %}" class="btn btn-secondary">Edit</a>
+                    <a href="{% url 'tracker:seed_tray_confirm_delete' seed_tray.pk %}" class="btn btn-danger">Delete</a>
+                    <a href="{% url 'tracker:seed_tray_detail' pk=seed_tray.pk %}" class="btn btn-info">View Details</a>
+
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <p>No seed trays found.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock inner %}

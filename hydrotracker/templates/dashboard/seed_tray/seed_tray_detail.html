@@ -1,0 +1,90 @@
+{% extends 'dashboard/base.html' %}
+
+{% block inner %}
+<style>
+  .seed-tray-grid-container {
+    overflow-x: auto; /* Allows horizontal scrolling */
+    background: #f5f5f5; /* Light gray background to simulate a tray */
+    border-radius: 10px; /* Rounded corners for the tray */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Shadow for depth */
+    padding: 10px; /* Space inside the tray */
+    margin: 20px auto; /* Margin around the tray */
+    width: fit-content; /* Width of the content plus padding */
+  }
+  .seed-tray-grid {
+    display: grid;
+    grid-template-columns: repeat({{ seed_tray.x_size }}, 60px); /* Column width */
+    gap: 10px; /* Gap between the squares */
+  }
+  .seed-tray-square {
+    background-color: #e0e0e0; /* Default background color for empty squares */
+    border: 1px solid #ccc; /* Border for squares */
+    border-radius: 3px;
+    position: relative;
+    width: 60px; /* Width for squares */
+    height: 60px; /* Height for squares */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease-in-out; /* Animation for the transform property */
+  }
+  
+  .seed-tray-square:hover {
+    transform: scale(1.1); /* Slightly increase the size of squares on hover */
+    z-index: 1; /* Ensure the hovered square overlaps the others */
+  }
+  
+  .seed-tray-plant {
+    background-color: #4caf50; /* Green background for filled squares */
+    color: white;
+    border-radius: 3px; /* Rounded corners for filled squares */
+    display: flex; /* Use flexbox to center content */
+    align-items: center; /* Center content vertically */
+    justify-content: center; /* Center content horizontally */
+    text-align: center;
+    width: 100%;
+    height: 100%;
+    padding: 4px; /* Padding inside filled squares */
+    box-sizing: border-box; /* Include padding and border in the width and height */
+    font-size: 0.8em; /* Adjust font size to fit text better */
+    line-height: 1.2; /* Adjust line height for better legibility */
+    text-decoration: none;
+
+  }
+  
+  .seed-tray-empty {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #495057; /* Text color for 'Add Plant' link */
+  }
+</style>
+<div class="container">
+    <h2>{{ seed_tray.name }} Detail</h2>
+    <div class="seed-tray-grid-container">
+        <div class="seed-tray-grid">
+            {% for row in grid %}
+                {% for plant in row %}
+                    <div class="seed-tray-square">
+                        {% if plant %}
+                            <div class="seed-tray-plant">
+                                <a href="{% url 'tracker:plant_edit' plant.pk %}" class="seed-tray-plant">
+
+                                {{ plant.plant_info.name }}
+                            </a>
+
+                            </div>
+                        {% else %}
+                            <a href="{% url 'tracker:plant_add' seed_tray.pk forloop.counter forloop.parentloop.counter %}" class="seed-tray-empty">+</a>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% endblock inner %}

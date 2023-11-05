@@ -1,0 +1,100 @@
+{% extends 'dashboard/base.html' %}
+
+{% block inner %}
+<style>
+    .small-tray {
+        display: grid;
+        grid-template-columns: repeat({{ seed_tray.x_size }}, 30px); /* Fixed size for the columns */
+        justify-content: center; /* This will center the grid in the container */
+        gap: 5px;
+        margin-bottom: 20px;
+      }
+      .square {
+        width: 30px; /* Fixed width for the squares */
+        height: 30px; /* Fixed height for the squares */
+        background-color: #e0e0e0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #ccc;
+        cursor: pointer;
+      }
+      .square.current-plant {
+        background-color: #fbbf24; /* Gold color for the current plant */
+      }
+      .square.occupied {
+        background-color: #f44336; /* Red color for occupied squares */
+      }
+      .square.empty {
+        background-color: #94a3b8; /* Light green for empty squares */
+      }
+      .square.selected {
+        border: 2px solid #4caf50; /* New border color for the selected square */
+      }
+      .square.grow {
+        transform: scale(1.1); /* Adjust the scale value as needed */
+        z-index: 10; /* Ensure the square grows above other elements */
+        transition: transform 0.3s; /* Smooth transition for the grow effect */
+      }
+      
+      
+</style>
+<div class="plant-info">
+    <p><strong>Current Stage:</strong> {{ plant.get_current_stage_display }}</p>
+    <p><strong>Creation Date:</strong> {{ plant.creation_date|date:"F d, Y" }}</p>
+    <p><strong>Germination Tray:</strong> {{ plant.seed_tray.name }}</p>
+</div>
+<p>Position:</p>
+<div class="small-tray">
+    {% for row in grid %}
+        {% for square in row %}
+            {% if square == 'current_plant' %}
+                <div class="square current-plant"></div>
+            {% elif square %}
+                <div class="square occupied"></div>
+            {% else %}
+                <div class="square empty" onclick="updatePosition({{ forloop.parentloop.counter0 }}, {{ forloop.counter0 }});"></div>
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+</div>
+<form method="post" id="edit-plant-form">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="hidden" id="position_x" name="position_x" value="{{ plant.position_x }}">
+    <input type="hidden" id="position_y" name="position_y" value="{{ plant.position_y }}">
+    <button type="submit" class="btn btn-primary">Save changes</button>
+    <a href="{% url 'tracker:plant_delete_confirm' plant.pk %}" class="btn btn-danger">Delete</a>
+
+</form>
+
+
+
+<script>
+    function updatePosition(row, col) {
+        // Get all squares and remove 'selected' and 'grow' classes
+        var squares = document.querySelectorAll('.small-tray .square');
+        squares.forEach(function(square) {
+            square.classList.remove('selected');
+            square.classList.remove('grow');
+        });
+
+        // Compute the correct index for the 0-based array
+        var index = row * {{ seed_tray.x_size }} + col;
+        
+        // Check if the selected square is not occupied or the current plant
+        if(!squares[index].classList.contains('occupied') && !squares[index].classList.contains('current-plant')){
+            // Add 'selected' and 'grow' classes to the clicked square
+            squares[index].classList.add('selected');
+            squares[index].classList.add('grow');
+        }
+        
+        // Update hidden input values
+        document.getElementById('position_x').value = col + 1; // Convert to 1-based index
+        document.getElementById('position_y').value = row + 1; // Convert to 1-based index
+    }
+</script>
+
+
+
+{% endblock inner %}
