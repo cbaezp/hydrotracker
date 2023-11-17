@@ -2,13 +2,15 @@
 
 {% block inner %}
 <style>
-    .small-tray {
-        display: grid;
-        grid-template-columns: repeat({{ seed_tray.x_size }}, 30px); /* Fixed size for the columns */
-        justify-content: center; /* This will center the grid in the container */
-        gap: 5px;
-        margin-bottom: 20px;
-      }
+
+        .small-tray {
+            display: grid;
+            /* This will create a grid with as many columns as x_size and make each column 30px wide */
+            grid-template-columns: repeat({{ hydroponic_system.x_size }}, 30px);
+            justify-content: center;
+            gap: 5px;
+            margin-bottom: 20px;
+        }
       .square {
         width: 30px; /* Fixed width for the squares */
         height: 30px; /* Fixed height for the squares */
@@ -42,7 +44,7 @@
 <div class="plant-info">
     <p><strong>Current Stage:</strong> {{ plant.get_current_stage_display }}</p>
     <p><strong>Creation Date:</strong> {{ plant.creation_date|date:"F d, Y" }}</p>
-    <p><strong>Germination Tray:</strong> {{ plant.seed_tray.name }}</p>
+    <p><strong>Germination Tray:</strong> {{ plant.hydroponic_grower.name }}</p>
 </div>
 <p>Position:</p>
 <div class="small-tray">
@@ -58,14 +60,13 @@
         {% endfor %}
     {% endfor %}
 </div>
-<form method="post" id="edit-plant-form">
+<form method="post" id="edit-plant-form" class="mt-2">
     {% csrf_token %}
     {{ form.as_p }}
     <input type="hidden" id="position_x" name="position_x" value="{{ plant.position_x }}">
     <input type="hidden" id="position_y" name="position_y" value="{{ plant.position_y }}">
-    <button type="submit" class="btn btn-primary">Save changes</button>
-    <a href="{% url 'tracker:plant_delete_confirm' plant.pk %}" class="btn btn-danger">Delete</a>
-    <button type="button" onclick="location.href='{% url 'tracker:plant_transfer' plant.pk %}'" class="btn btn-info">Transfer</button>
+    <button type="submit" class="btn btn-primary mt-5">Save changes</button>
+    <a href="{% url 'tracker:plant_delete_confirm' plant.pk %}" class="btn btn-danger mt-5">Delete</a>
 
 
 </form>
@@ -82,7 +83,7 @@
         });
 
         // Compute the correct index for the 0-based array
-        var index = row * {{ seed_tray.x_size }} + col;
+        var index = row * {{ hydroponic_system.x_size }} + col;
         
         // Check if the selected square is not occupied or the current plant
         if(!squares[index].classList.contains('occupied') && !squares[index].classList.contains('current-plant')){

@@ -12,7 +12,7 @@ class SeedTrayForm(forms.ModelForm):
 class HydroponicGrowerForm(forms.ModelForm):
     class Meta:
         model = HydroponicGrower
-        fields = ["name", "x_size", "y_size", "orientation"]
+        fields = ["name", "x_size", "y_size"]
 
 
 class PlantInfoForm(forms.ModelForm):
@@ -35,3 +35,23 @@ class PlantForm(forms.ModelForm):
         super(PlantForm, self).__init__(*args, **kwargs)
         if user:
             self.fields["plant_info"].queryset = PlantInfo.objects.filter(user=user)
+
+
+class HydroponicPlantUpdateForm(forms.ModelForm):
+    class Meta:
+        model = Plant
+        fields = ["current_stage"]
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+        super(HydroponicPlantUpdateForm, self).__init__(*args, **kwargs)
+        self.fields["current_stage"].choices = [
+            (choice[0], choice[1]) for choice in self.instance.STAGE_CHOICES if choice[0] in ["growing", "cropped"]
+        ]
+
+    def save(self, commit=True):
+        plant = super(HydroponicPlantUpdateForm, self).save(commit=False)
+        # Custom save logic here if needed
+        if commit:
+            plant.save()
+        return plant

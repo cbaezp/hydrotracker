@@ -32,6 +32,11 @@ urlpatterns = [
         views.hydroponic_grower_confirm_delete,
         name="hydroponic_grower_confirm_delete",
     ),
+    path(
+        "hydroponicgrowers/<int:pk>/",
+        views.hydroponic_grower_detail,
+        name="hydroponic_grower_detail",
+    ),
     path("plantinfo/", views.plant_info_list, name="plant_info_list"),
     path("plantinfo/add/", views.plant_info_create, name="plant_info_create"),
     path("plantinfo/<int:pk>/edit/", views.plant_info_edit, name="plant_info_edit"),
@@ -51,4 +56,11 @@ urlpatterns = [
         views.plant_delete_confirm,
         name="plant_delete_confirm",
     ),
+    path("plants/<int:plant_id>/transfer/", views.plant_transfer, name="plant_transfer"),
+    path(
+        "get-grower-size/<int:grower_id>/",
+        views.get_grower_size,
+        name="get-grower-size",
+    ),
+    path("hydroponic-plant-update/<int:plant_id>/", views.hydroponic_plant_update, name="hydroponic_plant_update"),
 ]

@@ -12,12 +12,9 @@ class SeedTrayAdmin(admin.ModelAdmin):
 
 @admin.register(HydroponicGrower)
 class HydroponicGrowerAdmin(admin.ModelAdmin):
-    list_display = ("name", "x_size", "y_size", "orientation", "user")
+    list_display = ("name", "x_size", "y_size", "user")
     search_fields = ("name", "user__username")
-    list_filter = (
-        "orientation",
-        "user",
-    )
+    list_filter = ("user",)
 
 
 @admin.register(PlantInfo)

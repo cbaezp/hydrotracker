@@ -17,14 +17,7 @@
             <label for="id_y_size">Y Size:</label>
             <input type="number" class="form-control" id="id_y_size" name="y_size" value="{{ form.instance.y_size }}" required>
         </div>
-        <div class="form-group">
-            <label for="id_orientation">Orientation:</label>
-            <select class="form-control" id="id_orientation" name="orientation">
-                {% for value, text in form.fields.orientation.choices %}
-                    <option value="{{ value }}"{% if form.instance.orientation == value %} selected{% endif %}>{{ text }}</option>
-                {% endfor %}
-            </select>
-        </div>
+
         <button type="submit" class="btn btn-primary">{{ form.instance.pk|yesno:"Update,Create" }}</button>
         <a href="{% url 'tracker:hydroponic_grower_list' %}" class="btn btn-secondary">Cancel</a>
     </form>

@@ -1,0 +1,203 @@
+{% extends 'dashboard/base.html' %}
+
+{% block inner %}
+<style>
+    .form-group {
+        margin-bottom: 1rem;
+      }
+    
+      .form-control {
+        display: block;
+        width: 100%;
+        padding: .375rem .75rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        color: #495057;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid #ced4da;
+        border-radius: .25rem;
+        transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+      }
+    
+      .hydroponic-grid-container {
+        overflow-x: auto;
+        max-width: 100%;
+        margin-top: 20px;
+        padding: 20px;
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: .25rem;
+        position: relative;
+      }
+    
+      .hydroponic-grid {
+        display: grid;
+        gap: 5px;
+        padding: 10px;
+        background-color: #fff;
+        border-radius: .25rem;
+      }
+    
+      .hydroponic-square {
+        width: 30px;
+        height: 30px;
+        background-color: #e0e0e0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #dee2e6;
+        cursor: pointer;
+        position: relative;
+      }
+    
+      .hydroponic-square.selected {
+        outline: 2px solid #007bff;
+        outline-offset: -1px;
+      }
+    
+      .hydroponic-square:hover {
+        background-color: #d4d4d4;
+        cursor: pointer;
+      }
+    
+      .btn {
+        display: inline-block;
+        font-weight: 400;
+        color: #212529;
+        text-align: center;
+        vertical-align: middle;
+        user-select: none;
+        background-color: transparent;
+        border: 1px solid transparent;
+        padding: .375rem .75rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        border-radius: .25rem;
+        transition: color .15s ease-in-out, background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+      }
+    
+      .btn-primary {
+        color: #fff;
+        background-color: #007bff;
+        border-color: #007bff;
+      }
+    
+      .btn-danger {
+        color: #fff;
+        background-color: #dc3545;
+        border-color: #dc3545;
+      }
+    
+      .btn-info {
+        color: #fff;
+        background-color: #17a2b8;
+        border-color: #17a2b8;
+      }
+      .hydroponic-square.occupied {
+        background-color: #dc3545; /* Red color for occupied squares */
+        cursor: auto;
+      }
+      
+    
+</style>
+
+<form method="post" id="transfer-form">
+  {% csrf_token %}
+  <div class="form-group">
+    <label for="hydroponic_grower_id">Select Hydroponic Grower:</label>
+    <select name="hydroponic_grower_id" id="hydroponic_grower_id" class="form-control">
+      {% for grower in hydroponic_growers %}
+        <option value="{{ grower.pk }}">{{ grower.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <!-- Placeholder for the hydroponic grower's grid -->
+  <div id="hydroponic-grower-grid" class="hydroponic-grid">
+    <!-- This will be populated with squares using the createGrid function -->
+  </div>
+
+  <input type="hidden" id="selected_position_x" name="position_x">
+  <input type="hidden" id="selected_position_y" name="position_y">
+
+  <button type="submit" id="confirm-transfer-button" class="btn btn-primary" disabled>Confirm Transfer</button>
+</form>
+
+<script>
+  // Stores the positions of existing plants
+  var occupiedPositions = {};
+
+  function createGrid(xSize, ySize) {
+    const gridContainer = document.getElementById('hydroponic-grower-grid');
+    const confirmButton = document.getElementById('confirm-transfer-button');
+    gridContainer.innerHTML = ''; // Clear any existing squares
+    gridContainer.style.gridTemplateColumns = `repeat(${xSize}, 30px)`; // Set the number of columns based on xSize
+    confirmButton.disabled = true; // Disable the button by default
+
+    for (let y = 0; y < ySize; y++) {
+      for (let x = 0; x < xSize; x++) {
+        const square = document.createElement('div');
+        const positionKey = `${x + 1}-${y + 1}`;
+
+        // Check if the position is occupied and mark red or add click event
+        if (occupiedPositions[positionKey]) {
+          square.className = 'hydroponic-square occupied';
+        } else {
+          square.className = 'hydroponic-square empty';
+          square.addEventListener('click', () => selectPosition(x + 1, y + 1, square));
+        }
+        gridContainer.appendChild(square);
+      }
+    }
+  }
+
+  function selectPosition(x, y, squareElement) {
+    // Clear previously selected square
+    const previouslySelectedSquare = document.querySelector('.hydroponic-square.selected');
+    if (previouslySelectedSquare) {
+      previouslySelectedSquare.classList.remove('selected');
+    }
+
+    // Mark the new square as selected if it's not occupied
+    if (!squareElement.classList.contains('occupied')) {
+      squareElement.classList.add('selected');
+      document.getElementById('selected_position_x').value = x;
+      document.getElementById('selected_position_y').value = y;
+      document.getElementById('confirm-transfer-button').disabled = false; // Enable the button
+    }
+  }
+
+  function fetchGrowerSize(growerId) {
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    fetch(`/tracker/get-grower-size/${growerId}/`, {
+      method: 'GET',
+      headers: {
+        "X-CSRFToken": csrftoken,
+        "Content-Type": "application/json",
+      },
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('Received data:', data); // Check the received data
+      occupiedPositions = data.occupied_positions || {}; // Update the occupied positions
+      createGrid(data.x_size, data.y_size);
+    })
+    .catch(error => console.error('Error fetching grower size:', error));
+  }
+
+  document.getElementById('hydroponic_grower_id').addEventListener('change', function() {
+    fetchGrowerSize(this.value);
+  });
+
+  // Initialize the grid with the first grower's size
+  document.addEventListener('DOMContentLoaded', function() {
+    const initialGrowerId = document.getElementById('hydroponic_grower_id').value;
+    fetchGrowerSize(initialGrowerId);
+  });
+</script>
+
+
+
+{% endblock inner %}

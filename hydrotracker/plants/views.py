@@ -1,11 +1,12 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
-from .forms import HydroponicGrowerForm, PlantForm, PlantInfoForm, SeedTrayForm
+from .forms import HydroponicGrowerForm, HydroponicPlantUpdateForm, PlantForm, PlantInfoForm, SeedTrayForm
 from .models import HydroponicGrower, Plant, PlantInfo, SeedTray
 
 
@@ -16,9 +17,7 @@ def test_view(request):
 @login_required
 def seed_tray_list(request):
     seed_trays = SeedTray.objects.filter(user=request.user)
-    return render(
-        request, "dashboard/seed_tray/seed_tray_list.html", {"seed_trays": seed_trays}
-    )
+    return render(request, "dashboard/seed_tray/seed_tray_list.html", {"seed_trays": seed_trays})
 
 
 @login_required
@@ -40,7 +39,10 @@ def seed_tray_create(request):
 def seed_tray_edit(request, pk):
     seed_tray = get_object_or_404(SeedTray, pk=pk, user=request.user)
     if Plant.objects.filter(seed_tray=seed_tray).exists():
-        messages.error(request, "Tray cannot be edited because it has plants. Empty your tray to edit.")
+        messages.error(
+            request,
+            "Tray cannot be edited because it has plants. Empty your tray to edit.",
+        )
         return redirect("tracker:seed_tray_list")
 
     if request.method == "POST":
@@ -91,18 +93,14 @@ def hydroponic_grower_create(request):
             return redirect("tracker:hydroponic_grower_list")
     else:
         form = HydroponicGrowerForm()
-    return render(
-        request, "dashboard/hydroponic/hydroponic_grower_form.html", {"form": form}
-    )
+    return render(request, "dashboard/hydroponic/hydroponic_grower_form.html", {"form": form})
 
 
 @login_required
 def hydroponic_grower_edit(request, pk):
     hydroponic_grower = get_object_or_404(HydroponicGrower, pk=pk, user=request.user)
     if Plant.objects.filter(hydroponic_grower=hydroponic_grower).exists():
-        messages.error(
-            request, "Hydroponic grower cannot be edited because it has plants."
-        )
+        messages.error(request, "Hydroponic grower cannot be edited because it has plants.")
         return redirect("tracker:hydroponic_grower_list")
 
     if request.method == "POST":
@@ -113,9 +111,7 @@ def hydroponic_grower_edit(request, pk):
             return redirect("tracker:hydroponic_grower_list")
     else:
         form = HydroponicGrowerForm(instance=hydroponic_grower)
-    return render(
-        request, "dashboard/hydroponic/hydroponic_grower_form.html", {"form": form}
-    )
+    return render(request, "dashboard/hydroponic/hydroponic_grower_form.html", {"form": form})
 
 
 @login_required
@@ -195,9 +191,7 @@ def seed_tray_detail(request, pk):
     plants = Plant.objects.filter(seed_tray=seed_tray).select_related("plant_info")
 
     # Mapping plants to their positions, adjusting for zero indexing.
-    positions = {
-        (plant.position_x - 1, plant.position_y - 1): plant for plant in plants
-    }
+    positions = {(plant.position_x - 1, plant.position_y - 1): plant for plant in plants}
 
     # Create a grid representation of the tray
     grid = [[None for _ in range(seed_tray.x_size)] for _ in range(seed_tray.y_size)]
@@ -270,7 +264,6 @@ def plant_edit(request, plant_id):
     else:
         form = PlantForm(instance=plant, user=request.user)
 
-    # Create a small representation of the tray
     grid = create_tray_representation(seed_tray, plant)
 
     return render(
@@ -286,11 +279,7 @@ def plant_edit(request, plant_id):
 
 
 def create_tray_representation(seed_tray, current_plant):
-    plants = (
-        Plant.objects.filter(seed_tray=seed_tray)
-        .exclude(pk=current_plant.pk)
-        .select_related("plant_info")
-    )
+    plants = Plant.objects.filter(seed_tray=seed_tray).exclude(pk=current_plant.pk).select_related("plant_info")
 
     # Create a dictionary of positions with plants
     positions = {(plant.position_x, plant.position_y): plant for plant in plants}
@@ -317,6 +306,149 @@ def plant_delete_confirm(request, pk):
     if request.method == "POST":
         plant.delete()
         # Redirect to the seed tray detail view after deletion
-        return redirect('tracker:seed_tray_detail', pk=seed_tray_id)
+        return redirect("tracker:seed_tray_detail", pk=seed_tray_id)
     # If it's a GET request, render the confirmation page
     return render(request, "dashboard/seed_tray/plant_delete_confirm.html", {"plant": plant})
+
+
+@login_required
+def hydroponic_grower_detail(request, pk):
+    hydroponic_grower = get_object_or_404(HydroponicGrower, pk=pk, user=request.user)
+    plants = Plant.objects.filter(hydroponic_grower=hydroponic_grower).select_related("plant_info")
+
+    # Create a grid representation of the grower
+    grid = [[None for _ in range(hydroponic_grower.x_size)] for _ in range(hydroponic_grower.y_size)]
+    for plant in plants:
+        x = plant.position_x - 1  # Convert to 0-based index
+        y = plant.position_y - 1  # Convert to 0-based index
+        if 0 <= x < hydroponic_grower.x_size and 0 <= y < hydroponic_grower.y_size:
+            grid[y][x] = plant
+
+    return render(
+        request,
+        "dashboard/hydroponic/hydroponic_grower_detail.html",
+        {
+            "hydroponic_grower": hydroponic_grower,
+            "grid": grid,
+        },
+    )
+
+
+@login_required
+def plant_transfer(request, plant_id):
+    plant = get_object_or_404(Plant, pk=plant_id, user=request.user)
+    hydroponic_growers = HydroponicGrower.objects.filter(user=request.user)
+
+    if request.method == "POST":
+        selected_grower_id = request.POST.get("hydroponic_grower_id")
+        selected_position_x = request.POST.get("position_x")
+        selected_position_y = request.POST.get("position_y")
+
+        try:
+            with transaction.atomic():
+                selected_grower = HydroponicGrower.objects.get(pk=selected_grower_id, user=request.user)
+                plant.seed_tray = None
+                plant.hydroponic_grower = selected_grower
+                plant.current_stage = "growing"
+                plant.position_x = selected_position_x
+                plant.position_y = selected_position_y
+                plant.datetime_germination_to_growing = timezone.now()
+                plant.save()
+
+                return redirect("tracker:hydroponic_grower_detail", pk=selected_grower_id)
+        except HydroponicGrower.DoesNotExist:
+            messages.error(
+                request,
+                "Unable to conduct transfer.",
+            )
+
+    return render(
+        request,
+        "dashboard/seed_tray/plant_transfer.html",
+        {
+            "plant": plant,
+            "hydroponic_growers": hydroponic_growers,
+        },
+    )
+
+
+@login_required
+def get_grower_size(request, grower_id):
+    try:
+        grower = HydroponicGrower.objects.get(pk=grower_id, user=request.user)
+        occupied_positions = list(
+            Plant.objects.filter(hydroponic_grower=grower).values_list("position_x", "position_y")
+        )
+
+        # Convert occupied positions to a dictionary format
+        occupied = {"{}-{}".format(x, y): True for x, y in occupied_positions}
+
+        data = {"x_size": grower.x_size, "y_size": grower.y_size, "occupied_positions": occupied}
+        return JsonResponse(data)
+    except HydroponicGrower.DoesNotExist:
+        return JsonResponse({"error": "Grower not found"}, status=404)
+
+
+@login_required
+def hydroponic_plant_update(request, plant_id):
+    plant = get_object_or_404(Plant, pk=plant_id, user=request.user)
+    hydroponic_system = plant.hydroponic_grower
+
+    if request.method == "POST":
+        form = HydroponicPlantUpdateForm(request.POST, instance=plant, user=request.user)
+        if form.is_valid():
+            form.save()
+            # If a new position is provided, update the plant position
+            new_stage = form.cleaned_data.get("current_stage")
+            new_position_x = request.POST.get("position_x")
+            new_position_y = request.POST.get("position_y")
+            if new_position_x and new_position_y and new_stage != "cropped":
+                plant.position_x = new_position_x
+                plant.position_y = new_position_y
+                plant.save()
+            if new_stage == "cropped":
+                plant.datetime_growing_to_cropped = timezone.now()
+                plant.position_x = None
+                plant.position_y = None
+                plant.hydroponic_grower = None
+                plant.save()
+            return redirect("tracker:hydroponic_grower_detail", pk=hydroponic_system.pk)
+    else:
+        form = HydroponicPlantUpdateForm(instance=plant, user=request.user)
+
+    grid = create_hydroponic_representation(hydroponic_system, plant)
+
+    return render(
+        request,
+        "dashboard/hydroponic/hydroponic_plant_update.html",
+        {
+            "form": form,
+            "hydroponic_system": hydroponic_system,
+            "grid": grid,
+            "plant": plant,
+        },
+    )
+
+
+def create_hydroponic_representation(hydroponic_system, current_plant):
+    plants = (
+        Plant.objects.filter(hydroponic_grower=hydroponic_system)
+        .exclude(pk=current_plant.pk)
+        .select_related("plant_info")
+    )
+
+    # Create a dictionary of positions with plants
+    positions = {(plant.position_x, plant.position_y): plant for plant in plants}
+
+    # Create a grid representation of the hydroponic system
+    grid = [[None for _ in range(hydroponic_system.x_size)] for _ in range(hydroponic_system.y_size)]
+
+    # Fill the grid with plants, skipping the position of current_plant
+    for x in range(1, hydroponic_system.x_size + 1):
+        for y in range(1, hydroponic_system.y_size + 1):
+            if (x, y) in positions:
+                grid[y - 1][x - 1] = positions[(x, y)]
+            elif (x, y) == (current_plant.position_x, current_plant.position_y):
+                grid[y - 1][x - 1] = "current_plant"
+
+    return grid

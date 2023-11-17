@@ -19,6 +19,7 @@
                     </p>
                     <a href="{% url 'tracker:hydroponic_grower_edit' hydroponic_grower.pk %}" class="btn btn-secondary">Edit</a>
                     <a href="{% url 'tracker:hydroponic_grower_confirm_delete' hydroponic_grower.pk %}" class="btn btn-danger">Delete</a>
+                    <a href="{% url 'tracker:hydroponic_grower_detail' pk=hydroponic_grower.pk %}" class="btn btn-info">View Details</a>
                 </div>
             </div>
         </div>
