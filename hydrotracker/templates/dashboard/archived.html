@@ -1,0 +1,58 @@
+{% extends "dashboard/base.html" %}
+
+{% block inner %}
+<div class="container mt-4">
+    <h2>Harvest History</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Plant</th>
+                <th>Number of Seeds Used</th>
+                <th>Creation Date</th>
+                <th>Harvest Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for plant in cropped_plants %}
+            <tr>
+                <td>{{ plant.plant_info.name }}</td>
+                <td>{{ plant.n_seeds_used }}</td>
+                <td>{{ plant.creation_date }}</td>
+                <td>{{ plant.datetime_growing_to_cropped }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4">No plants found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Pagination Controls -->
+    <div class="mt-4">
+        <nav aria-label="Page navigation">
+            <ul class="pagination">
+                {% if cropped_plants.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ cropped_plants.previous_page_number }}">Previous</a>
+                    </li>
+                {% endif %}
+
+                {% for num in cropped_plants.paginator.page_range %}
+                    {% if cropped_plants.number == num %}
+                        <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                    {% else %}
+                        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if cropped_plants.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ cropped_plants.next_page_number }}">Next</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</div>
+{% endblock inner %}

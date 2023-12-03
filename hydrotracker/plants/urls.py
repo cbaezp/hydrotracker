@@ -63,4 +63,7 @@ urlpatterns = [
         name="get-grower-size",
     ),
     path("hydroponic-plant-update/<int:plant_id>/", views.hydroponic_plant_update, name="hydroponic_plant_update"),
+    path('archived/', views.cropped_plants_view, name='archived'),
+    path('dashboard/', views.dashboard_view, name='dashboard'),
+
 ]

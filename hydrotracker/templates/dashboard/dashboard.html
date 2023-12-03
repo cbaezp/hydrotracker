@@ -1,0 +1,41 @@
+{% extends "dashboard/base.html" %}
+
+{% block inner %}
+
+<div class="container mt-4">
+
+    
+    <!-- Overview Section -->
+    <div class="row my-4">
+        <div class="col">
+            <h4>Total Plants: {{ total_plants }}</h4>
+        </div>
+        {% for stage in stage_counts %}
+        <div class="col">
+            <h4>{{ stage.current_stage|title }}: {{ stage.count }}</h4>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Recent Activities -->
+    <div class="card my-4">
+        <div class="card-header">
+            Recent Activities
+        </div>
+        <ul class="list-group list-group-flush">
+            {% for activity in recent_activities %}
+            <li class="list-group-item">{{ activity.plant_info.name }} - {{ activity.current_stage|title }} ({{ activity.creation_date }})</li>
+            {% empty %}
+            <li class="list-group-item">No recent activities.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="d-grid gap-2 d-md-flex justify-content-md-end my-4">
+        <a href="{% url 'tracker:plant_info_list' %}"  class="btn btn-primary">Manage Plants</a>
+        
+    </div>
+</div>
+
+{% endblock inner %}

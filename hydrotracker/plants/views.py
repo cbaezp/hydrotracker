@@ -5,13 +5,14 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
-
+from django.core.paginator import Paginator
 from .forms import HydroponicGrowerForm, HydroponicPlantUpdateForm, PlantForm, PlantInfoForm, SeedTrayForm
 from .models import HydroponicGrower, Plant, PlantInfo, SeedTray
-
+from django.db.models import Count
 
 def test_view(request):
     return render(request, "dashboard/test.html")
+
 
 
 @login_required
@@ -452,3 +453,37 @@ def create_hydroponic_representation(hydroponic_system, current_plant):
                 grid[y - 1][x - 1] = "current_plant"
 
     return grid
+
+
+
+@login_required
+def cropped_plants_view(request):
+    cropped_plants_list = Plant.objects.filter(
+        user=request.user, 
+        current_stage='cropped'
+    ).order_by('-datetime_growing_to_cropped')
+
+
+    paginator = Paginator(cropped_plants_list, 10) 
+    page_number = request.GET.get('page')
+    cropped_plants = paginator.get_page(page_number)
+
+    context = {
+        'cropped_plants': cropped_plants,
+    }
+    return render(request, 'dashboard/archived.html', context)
+
+
+
+@login_required
+def dashboard_view(request):
+    total_plants = Plant.objects.filter(user=request.user).count()
+    stage_counts = Plant.objects.filter(user=request.user).values('current_stage').annotate(count=Count('current_stage'))
+    recent_activities = Plant.objects.filter(user=request.user).order_by('-creation_date')[:5]
+
+    context = {
+        'total_plants': total_plants,
+        'stage_counts': stage_counts,
+        'recent_activities': recent_activities,
+    }
+    return render(request, 'dashboard/dashboard.html', context)
