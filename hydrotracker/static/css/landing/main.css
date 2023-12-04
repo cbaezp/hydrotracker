@@ -261,7 +261,7 @@ img {
   background-position: bottom center;
   -moz-background-size: cover;
        background-size: cover;
-  background-image: url("/static/images/bg-lines-about.svg");
+  
 }
 
 .text-align-left {
